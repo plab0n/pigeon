@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"github.com/gorilla/websocket"
+	"net/http"
 )
 
 var upgrader = websocket.Upgrader{
@@ -17,24 +17,11 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error upgrading connection:", err)
 		return
 	}
-	defer conn.Close()
-
+	//Note: The client is not assigned to any hub yet
+	client := &Client{conn: conn, send: make(chan []byte, 256)}
 	fmt.Println("Client connected")
-
-	for {
-		messageType, p, err := conn.ReadMessage()
-		if err != nil {
-			fmt.Println("Error reading message:", err)
-			return
-		}
-
-		fmt.Printf("Received message: %s\n", p)
-
-		if err := conn.WriteMessage(messageType, p); err != nil {
-			fmt.Println("Error writing message:", err)
-			return
-		}
-	}
+	go client.readPump()
+	go client.writePump()
 }
 
 func main() {
