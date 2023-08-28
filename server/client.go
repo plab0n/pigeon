@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package server
 
 import (
 	"bytes"
@@ -42,12 +42,23 @@ type Client struct {
 	send chan []byte
 }
 
+func Create(conn *websocket.Conn) *Client {
+	return &Client{
+		hub:  nil,
+		conn: conn,
+		send: make(chan []byte, 256),
+	}
+}
+
+// func(cc *Client) newClient CliClient{
+
+// }
 // readPump pumps messages from the websocket connection to the hub.
 //
 // The application runs readPump in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine.
-func (c *Client) readPump() {
+func (c *Client) ReadPump() {
 	defer func() {
 		//c.hub.unregister <- c
 		c.conn.Close()
@@ -73,7 +84,7 @@ func (c *Client) readPump() {
 // A goroutine running writePump is started for each connection. The
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
-func (c *Client) writePump() {
+func (c *Client) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()

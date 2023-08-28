@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/gorilla/websocket"
+	"log"
 	"net/http"
+
+	"github.com/gorilla/websocket"
+	"github.com/plab0n/pigeon/server"
 )
 
 var upgrader = websocket.Upgrader{
@@ -18,13 +21,25 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//Note: The client is not assigned to any hub yet
-	client := &Client{conn: conn, send: make(chan []byte, 256)}
+	client := server.Create(conn)
 	fmt.Println("Client connected")
-	go client.readPump()
-	go client.writePump()
+	go client.ReadPump()
+	go client.WritePump()
 }
-
+func serveHome(w http.ResponseWriter, r *http.Request) {
+	log.Println(r.URL)
+	if r.URL.Path != "/" {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	http.ServeFile(w, r, "home.html")
+}
 func main() {
+	http.HandleFunc("/", serveHome)
 	http.HandleFunc("/ws", handleWebSocket)
 
 	fmt.Println("WebSocket server started on :8080")
