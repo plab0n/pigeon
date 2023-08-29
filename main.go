@@ -33,9 +33,12 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 }
 func addClientToHub(client *server.Client, hubId string) {
 	log.Println("Adding client to hub. HubId: ", hubId)
-	hub := server.CreateHub()
-	hubs[hubId] = hub
-	hub.Run()
+	hub, ok := hubs[hubId]
+	if !ok {
+		hub = server.CreateHub()
+		hubs[hubId] = hub
+		go hub.Run()
+	}
 	hub.Register(client)
 }
 func serveHome(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +60,7 @@ func main() {
 	http.HandleFunc("/ws/{roomId}", handleWebSocket)
 	http.HandleFunc("/send", func(w http.ResponseWriter, r *http.Request) {
 		hubId := r.URL.Query().Get("roomId")
-		message := "hello"
+		message := r.URL.Query().Get("message")
 		hub, ok := hubs[hubId]
 		if ok {
 			log.Println("Boradcasting: ", message)
