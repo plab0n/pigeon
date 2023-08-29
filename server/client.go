@@ -42,7 +42,7 @@ type Client struct {
 	send chan []byte
 }
 
-func Create(conn *websocket.Conn) *Client {
+func CreateClient(conn *websocket.Conn) *Client {
 	return &Client{
 		hub:  nil,
 		conn: conn,
@@ -76,6 +76,7 @@ func (c *Client) ReadPump() {
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		//c.hub.broadcast <- message
+		//ToDo: implement client to client and client to hub message transfer
 	}
 }
 
@@ -93,6 +94,7 @@ func (c *Client) WritePump() {
 	for {
 		select {
 		case message, ok := <-c.send:
+			log.Println("Client: Message recieved.  ", message)
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.

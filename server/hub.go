@@ -4,6 +4,8 @@
 
 package server
 
+import "log"
+
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
 type Hub struct {
@@ -20,7 +22,7 @@ type Hub struct {
 	unregister chan *Client
 }
 
-func newHub() *Hub {
+func CreateHub() *Hub {
 	return &Hub{
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
@@ -28,11 +30,20 @@ func newHub() *Hub {
 		clients:    make(map[*Client]bool),
 	}
 }
-
-func (h *Hub) run() {
+func (h *Hub) Register(client *Client) {
+	h.register <- client
+}
+func (h *Hub) UnRegister(client *Client) {
+	h.register <- client
+}
+func (h *Hub) Broadcast(message []byte) {
+	h.broadcast <- message
+}
+func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:
+			log.Println("Client registered")
 			h.clients[client] = true
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
@@ -40,6 +51,7 @@ func (h *Hub) run() {
 				close(client.send)
 			}
 		case message := <-h.broadcast:
+			log.Println("Recieved at broadcast. ", message)
 			for client := range h.clients {
 				select {
 				case client.send <- message:
