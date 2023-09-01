@@ -33,8 +33,6 @@ var (
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	hub *Hub
-
 	// The websocket connection.
 	conn *websocket.Conn
 
@@ -44,7 +42,6 @@ type Client struct {
 
 func CreateClient(conn *websocket.Conn) *Client {
 	return &Client{
-		hub:  nil,
 		conn: conn,
 		send: make(chan []byte, 256),
 	}
