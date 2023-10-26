@@ -53,20 +53,21 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 	}
 	http.ServeFile(w, r, "home.html")
 }
+func sendMessage(w http.ResponseWriter, r *http.Request) {
+	hubId := r.URL.Query().Get("roomId")
+	message := r.URL.Query().Get("message")
+	hub, ok := hubs[hubId]
+	if ok {
+		log.Println("Boradcasting: ", message)
+		hub.Broadcast([]byte(message))
+	}
+}
 func main() {
 	hubs = make(map[string]*server.Hub)
 	http.HandleFunc("/", serveHome)
 	http.HandleFunc("/ws", handleWebSocket)
 	http.HandleFunc("/ws/{roomId}", handleWebSocket)
-	http.HandleFunc("/send", func(w http.ResponseWriter, r *http.Request) {
-		hubId := r.URL.Query().Get("roomId")
-		message := r.URL.Query().Get("message")
-		hub, ok := hubs[hubId]
-		if ok {
-			log.Println("Boradcasting: ", message)
-			hub.Broadcast([]byte(message))
-		}
-	})
+	http.HandleFunc("/send", sendMessage)
 	fmt.Println("WebSocket server started on :8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		fmt.Println("Error starting server:", err)
